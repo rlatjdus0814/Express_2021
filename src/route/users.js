@@ -1,7 +1,49 @@
 import { Router } from "express";
 import _ from "lodash";
+import sequelize from "sequelize";
 import faker from "faker";
 faker.locale = "ko";
+
+const seq = new sequelize('express', 'root', '1234', {
+  host: 'localhost',
+  dialect: 'mysql'
+});
+
+const check_sequelize_auth = async () => {
+  try {
+    await seq.authenticate();
+    console.log('db 연결성공');
+  } catch (err) {
+    console.error('db 연결실패:' + err);
+  }
+}
+check_sequelize_auth();
+
+const User = seq.define("user", { //유저 설계도
+  name: {
+    type: sequelize.STRING,
+    allowNull: false
+  },
+  age: {
+    type: sequelize.INTEGER,
+    allowNull: false
+  }
+});
+
+const user_sync = async () => {
+  try {
+    await User.sync({ force: true }); //동기화한 설계도
+    for (let i = 0; i < 100; i++) {
+      await User.create({ //한 번에 한 유저를 생성하기 위해 await 사용
+        name: faker.name.lastName() + faker.name.firstName(),
+        age: getRandomInt(15, 50)
+      });
+    }
+  } catch (err) {
+    console.log(err)
+  }
+}
+user_sync();
 
 const userRouter = Router();
 
@@ -12,32 +54,43 @@ const getRandomInt = (min, max) => {
 }
 
 let users = [];
-for (let i = 1; i < 10000; i += 1) {
-  users.push({
-    id: 1,
-    name: faker.name.lastName() + faker.name.firstName(),
-    age: getRandomInt(15, 50),
-  })
-}
+// for (let i = 1; i < 10000; i += 1) {
+//   users.push({
+//     id: 1,
+//     name: faker.name.lastName() + faker.name.firstName(),
+//     age: getRandomInt(15, 50),
+//   })
+// }
 
 console.log("준비됨")
 
 //전체 조회
-userRouter.get("/", (req, res) => {
-  const { name, age } = req.query;
-  let filteredUsers = users;
-  if (name) {
-    filteredUsers = _.filter(filteredUsers, (user) => {
-      return user.name.includes(name);
-    });
+userRouter.get("/", async (req, res) => {
+  try {
+    let { name, age } = req.query;
+    const { Op } = sequelize;
+    const findUserQuery = {
+      attributes: ['name', 'age'],
+    }
+    let result;
+
+    if (name && age) {
+      findUserQuery['where'] = { name: { [Op.substring]: name }, age }
+    } else if (name) {
+      findUserQuery['where'] = { name: { [Op.substring]: name } }
+    } else if (age) {
+      findUserQuery['where'] = { age }
+    }
+
+    result = await User.findAll(findUserQuery);
+    res.status(200).send({
+      count: result.length,
+      result
+    })
+  } catch (err) {
+    console.log(err)
+    res.status(500).send("서버에 문제가 발생")
   }
-  if (age) {
-    filteredUsers = _.filter(filteredUsers, ['age', parseInt(age)]);
-  }
-  res.send({
-    count: filteredUsers.length,
-    filteredUsers
-  });
 });
 
 //한 명의 유저 조회
