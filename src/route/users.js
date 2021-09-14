@@ -114,20 +114,24 @@ userRouter.get("/:id", (req, res) => {
 });
 
 //유저 생성
-userRouter.post("/", (req, res) => {
-  const createUser = req.body;
-  const check_user = _.find(users, ["id", createUser.id]); //find로 객체 체크
-
-  let result; //변수 생성해서 메세지 출력
-  if (!check_user && createUser.id && createUser.name && createUser.age) { //예외처리
-    users.push(createUser);
-    result = `${createUser.name}님을 생성했습니다.`
-  } else {
-    result = '입력 요청값이 잘못되었습니다.'
+userRouter.post("/", async (req, res) => {
+  try {
+    const { name, age } = req.body;
+    if (!name || !age) {
+      res.status(400).send({
+        msg: "입력요청값이 잘못되었습니다."
+      });
+    }
+    const result = await User.create({ name, age }); // {name: name, age: age}
+    res.status(201).send({
+      msg: `id ${result.id}, ${result.name} 유저가 생성되었습니다.`
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(201).send({
+      msg: "서버에 문제 발생"
+    });
   }
-  res.status(201).send({ //res.send는 한 번만  201: Created
-    result
-  });
 });
 
 //name 변경
