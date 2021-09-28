@@ -1,30 +1,47 @@
 import { Router } from "express";
 import _ from "lodash";
+import sequelize from "sequelize";
+import faker from "faker";
+
+const seq = new sequelize('express', 'root', '1234', {
+  host: 'localhost',
+  dialect: 'mysql',
+  logging: true,
+});
+
+const Board = seq.define("board", { //유저 테이블 정의
+  title: {
+    type: sequelize.STRING,
+    allowNull: false
+  },
+  content: {
+    type: sequelize.TEXT,
+    allowNull: true
+  }
+});
+
+const board_sync = async () => {
+  try {
+    await Board.sync({ force: true }); //기존 테이블 삭제 후 새 테이블 생성
+    for (let i = 0; i < 1000; i++) {
+      await Board.create({
+        title: faker.lorem.sentence(1),
+        content: faker.lorem.sentence(10)
+      })
+    }
+  } catch (error) {
+    console.log(error)
+  }
+}
+//board_sync();
 
 const boardRouter = Router();
 
-let boards = [{
-  id: 1,
-  title: "게시판 제목입니다.",
-  content: "게시판 내용입니다.",
-  createDate: "2021-09-07",
-  updateDate: "2021-09-08"
-}, {
-  id: 2,
-  title: "게시판 제목입니다.",
-  content: "게시판 내용입니다.",
-  createDate: "2021-09-07",
-  updateDate: "2021-09-08"
-}, {
-  id: 3,
-  title: "게시판 제목입니다.",
-  content: "게시판 내용입니다.",
-  createDate: "2021-09-07",
-  updateDate: "2021-09-08"
-}];
+let boards = [];
 
 //게시글 전체 조회
-boardRouter.get("/", (req, res) => {
+boardRouter.get("/", async (req, res) => {
+  const boards = await Board.findAll();
   res.send({
     count: boards.length,
     boards
