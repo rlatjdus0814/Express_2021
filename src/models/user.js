@@ -13,5 +13,8 @@ export default (sequelize, DataTypes) => {
       allowNull: true
     }
   });
+  User.associate = function (models) {
+    models.User.hasMany(models.Board)
+  };
   return User;
 };
