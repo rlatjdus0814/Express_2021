@@ -142,7 +142,7 @@ userRouter.post("/", async (req, res) => {
     });
   } catch (err) {
     console.log(err);
-    res.status(201).send({
+    res.status(500).send({
       msg: "서버에 문제 발생"
     });
   }

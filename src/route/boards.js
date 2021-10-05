@@ -10,7 +10,7 @@ const seq = new sequelize('express', 'root', '1234', {
   logging: true,
 });
 
-const Board = seq.define("board", { //유저 테이블 정의
+const Board = seq.define("board", { //게시글 테이블 정의
   title: {
     type: sequelize.STRING,
     allowNull: false
@@ -74,60 +74,79 @@ boardRouter.get("/:id", async (req, res) => {
   }
 });
 
-/*
 //게시글 생성
-boardRouter.post("/", (req, res) => {
-  const createBoard = req.body;
-  const check_board = _.find(boards, ["id", createBoard.id]);
-
-  let result;
-  if (!check_board && createBoard.id && createBoard.title && createBoard.content && createBoard.createDate && createBoard.updateDate) { //예외처리
-    boards.push(createBoard);
-    result = `${createBoard.title}번째 게시글을 생성하였습니다.`
-  } else {
-    result = '입력 요청값이 잘못되었습니다.'
+boardRouter.post("/", async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    if (!title) {
+      res.status(400).send({
+        msg: "입력요청값이 잘못되었습니다."
+      });
+    }
+    const result = await Board.create({
+      title,
+      content: content ? content : null
+    });
+    res.status(201).send({
+      msg: `id ${result.id}, ${result.title} 게시글이 생성되었습니다.`
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({
+      msg: "서버에 문제 발생"
+    });
   }
-  res.status(201).send({
-    result
-  });
+
 });
 
 //title 변경
-boardRouter.put("/:id", (req, res) => {
-  const find_board_index = _.findIndex(boards, ["id", parseInt(req.params.id)]);
-  let result;
-  if (find_board_index !== -1) {
-    boards[find_board_index].title = req.body.title;
-    result = "성공적으로 수정되었습니다.";
+boardRouter.put("/:id", async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    let board = await Board.findOne({
+      where: {
+        id: req.params.id
+      }
+    })
+    if (!board || (!title && !content)) {
+      res.status(400).send({ msg: '게시글이 존재하지 않거나 입력값이 잘못되었습니다.' });
+    }
+
+    if (title) board.title = title;
+    if (content) board.content = content;
+
+    await board.save();
     res.status(200).send({
-      result
+      msg: '게시글이 정상적으로 수정되었습니다.'
     });
-  } else {
-    result = `아이디가 ${req.params.id}인 게시글이 존재하지 않습니다.`;
-    res.status(400).send({
-      result
+  } catch (error) {
+    res.status(500).send({
+      msg: '서버에 문제가 발했습니다. 잠시 후 다시 시도해주세요.'
     });
   }
 });
 
 //게시글 지우기
-boardRouter.delete("/:id", (req, res) => {
-  const check_board = _.find(boards, ["id", parseInt(req.params.id)]);
-  let result;
-  if (check_board) {
-    boards = _.reject(boards, ["id", parseInt(req.params.id)]);
-    result = "성공적으로 삭제되었습니다.";
+boardRouter.delete("/:id", async (req, res) => {
+  try {
+    let board = await Board.findOne({
+      where: {
+        id: req.params.id
+      }
+    })
+    if (!board) {
+      res.status(400).send({ msg: '게시글이 존재하지 않습니다.' });
+    }
+
+    await board.destroy();
     res.status(200).send({
-      result
+      msg: '게시글이 정상적으로 삭제되었습니다.'
     });
-  } else {
-    result = `아이디가 ${req.params.id}인 게시글이 존재하지 않습니다.`;
-    res.status(400).send({
-      result
+  } catch (error) {
+    res.status(500).send({
+      msg: '서버에 문제가 발했습니다. 잠시 후 다시 시도해주세요.'
     });
   }
 });
-
-*/
 
 export default boardRouter;
