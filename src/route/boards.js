@@ -1,44 +1,8 @@
 import { Router } from "express";
-import _ from "lodash";
-import sequelize from "sequelize";
-import faker from "faker";
-faker.locale = "ko";
+import db from "../models/index.js";
 
-const seq = new sequelize('express', 'root', '1234', {
-  host: 'localhost',
-  dialect: 'mysql',
-  logging: true,
-});
-
-const Board = seq.define("board", { //게시글 테이블 정의
-  title: {
-    type: sequelize.STRING,
-    allowNull: false
-  },
-  content: {
-    type: sequelize.TEXT,
-    allowNull: true
-  }
-});
-
-const board_sync = async () => {
-  try {
-    await Board.sync({ force: true }); //기존 테이블 삭제 후 새 테이블 생성
-    for (let i = 0; i < 1000; i++) {
-      await Board.create({
-        title: faker.lorem.sentence(1),
-        content: faker.lorem.sentence(10)
-      })
-    }
-  } catch (error) {
-    console.log(error)
-  }
-}
-//board_sync();
-
+const Board = db.Board;
 const boardRouter = Router();
-
-let boards = [];
 
 //게시글 전체 조회
 boardRouter.get("/", async (req, res) => {
