@@ -2,6 +2,7 @@ import { Router } from "express";
 import _ from "lodash";
 import sequelize from "sequelize";
 import faker from "faker";
+faker.locale = "ko";
 
 const seq = new sequelize('express', 'root', '1234', {
   host: 'localhost',
@@ -41,13 +42,39 @@ let boards = [];
 
 //게시글 전체 조회
 boardRouter.get("/", async (req, res) => {
-  const boards = await Board.findAll();
-  res.send({
-    count: boards.length,
-    boards
-  });
+  try {
+    const boards = await Board.findAll();
+    res.status(200).send({
+      count: boards.length,
+      boards
+    });
+  } catch (error) {
+    console.log(error)
+    res.status(500).send({ msg: "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요." })
+  }
 });
 
+boardRouter.get("/:id", async (req, res) => {
+  try {
+    const findBoard = await Board.findOnd({
+      where: {
+        id: req.params.id
+      }
+    });
+    if (findBoard) {
+      res.status(200).send({
+        findBoard
+      });
+    } else {
+      res.status(400).send({ msg: "해당 id값을 가진 board가 없습니다." })
+    }
+  } catch (error) {
+    console.log(error)
+    res.status(500).send({ msg: "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요." })
+  }
+});
+
+/*
 //게시글 생성
 boardRouter.post("/", (req, res) => {
   const createBoard = req.body;
@@ -100,5 +127,7 @@ boardRouter.delete("/:id", (req, res) => {
     });
   }
 });
+
+*/
 
 export default boardRouter;
