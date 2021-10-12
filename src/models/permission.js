@@ -12,10 +12,10 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true
     }
+    //createAt, updateAt 기본으로 생성
   });
   Permission.associate = function (models) {
-    models.Permission.delongsTo(models.User)
-    //models.permission.delongsTo(models.permission)
+    models.Permission.delongsTo(models.User);
   }
   return Permission;
 };

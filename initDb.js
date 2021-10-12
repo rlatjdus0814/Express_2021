@@ -13,7 +13,6 @@ const getRandomInt = (min, max) => {
 
 const user_sync = async () => {
   try {
-    await User.sync({ force: true }); //동기화한 설계도
     for (let i = 0; i < 100; i++) {
       const hashpwd = await bcrypt.hash("test1234", 5); //비밀번호 bcrypt화
       await User.create({ //한 번에 한 유저를 생성하기 위해 await 사용
@@ -42,5 +41,8 @@ const board_sync = async () => {
   }
 }
 
-await user_sync();
-await board_sync();
+db.sequelize.query("SET FOREIGN_KEY_CHECKS = 0", { raw: true }).then(async () => {
+  db.sequelize.sync({ force: true });
+  await user_sync();
+  await board_sync();
+})

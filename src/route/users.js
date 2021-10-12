@@ -1,8 +1,10 @@
 import { Router } from "express";
 import sequelize from "sequelize";
+import bcrypt from "bcrypt";
 import db from "../models/index.js";
+import user from "../models/user.js";
 
-const User = db.User;
+const { User, Permission } = db;
 const userRouter = Router();
 
 //전체 조회
@@ -11,7 +13,8 @@ userRouter.get("/", async (req, res) => {
     let { name, age } = req.query;
     const { Op } = sequelize;
     const findUserQuery = {
-      attributes: ['name', 'age'],
+      attributes: ['id', 'name', 'age'],
+      include: [Permission]
     }
     let result;
 
@@ -58,16 +61,24 @@ userRouter.get("/:id", (req, res) => {
 //유저 생성
 userRouter.post("/", async (req, res) => {
   try {
-    const { name, age } = req.body;
-    if (!name || !age) {
+    const { name, age, password, permission } = req.body;
+    if (!name || !age || !password || !permission) {
       res.status(400).send({
         msg: "입력요청값이 잘못되었습니다."
       });
     }
-    const result = await User.create({ name, age }); // {name: name, age: age}
-    res.status(201).send({
-      msg: `id ${result.id}, ${result.name} 유저가 생성되었습니다.`
-    });
+    else {
+      const hashpwd = await bcrypt.hash(password, 4);
+      const result = await User.create({ name, age, password: hashpwd }); // {name: name, age: age}
+      await user.createPermission({
+        title: permission.title,
+        level: permission.level,
+      })
+
+      res.status(201).send({
+        msg: `id ${result.id}, ${result.name} 유저가 생성되었습니다.`
+      });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({
