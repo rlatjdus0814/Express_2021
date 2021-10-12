@@ -103,11 +103,13 @@ userRouter.put("/:id", async (req, res) => {
 
     if (name) user.name = name;
     if (age) user.age = age;
+    else {
+      await user.save();
+      res.status(200).send({
+        msg: '유저정보가 정상적으로 수정되었습니다.'
+      });
+    }
 
-    await user.save();
-    res.status(200).send({
-      msg: '유저정보가 정상적으로 수정되었습니다.'
-    });
   } catch (error) {
     res.status(500).send({
       msg: '서버에 문제가 발했습니다. 잠시 후 다시 시도해주세요.'
@@ -124,12 +126,12 @@ userRouter.delete("/:id", async (req, res) => { //auth 체크 + 권한, 본인�
     })
     if (!user) {
       res.status(400).send({ msg: '유저가 존재하지 않습니다.' });
+    } else {
+      await user.destroy();
+      res.status(200).send({
+        msg: '유저정보가 정상적으로 삭제되었습니다.'
+      });
     }
-
-    await user.destroy();
-    res.status(200).send({
-      msg: '유저정보가 정상적으로 삭제되었습니다.'
-    });
   } catch (error) {
     res.status(500).send({
       msg: '서버에 문제가 발했습니다. 잠시 후 다시 시도해주세요.'
