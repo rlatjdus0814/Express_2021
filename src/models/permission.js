@@ -15,7 +15,7 @@ export default (sequelize, DataTypes) => {
     //createAt, updateAt 기본으로 생성
   });
   Permission.associate = function (models) {
-    models.Permission.delongsTo(models.User);
+    models.Permission.belongsTo(models.User);
   }
   return Permission;
 };

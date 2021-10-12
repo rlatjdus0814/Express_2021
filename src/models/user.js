@@ -17,6 +17,7 @@ export default (sequelize, DataTypes) => {
     models.User.hasOne(models.Permission, {
       foreignKey: 'userIdKey'
     });
+    models.User.hasMany(models.Board);
   };
   return User;
 };

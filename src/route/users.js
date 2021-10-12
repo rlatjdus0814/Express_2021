@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 import db from "../models/index.js";
 import user from "../models/user.js";
 
-const { User, Permission } = db;
+const { User, Board, Permission } = db;
 const userRouter = Router();
 
 //전체 조회
@@ -14,7 +14,6 @@ userRouter.get("/", async (req, res) => {
     const { Op } = sequelize;
     const findUserQuery = {
       attributes: ['id', 'name', 'age'],
-      include: [Permission]
     }
     let result;
 
@@ -39,23 +38,26 @@ userRouter.get("/", async (req, res) => {
 });
 
 //한 명의 유저 조회
-userRouter.get("/:id", (req, res) => {
-  const findUser = _.find(users, { id: parseInt(req.params.id) });
-  let msg;
-  if (findUser) {
-    msg = "정상적으로 조회되었습니다.";
-    res.status(200).send({ //200: OK
-      msg,
-      findUser
+userRouter.get("/:id", async (req, res) => {
+  try {
+    const findUser = await User.findOne({
+      // include: [Permission, Board], // 모든 컬럼을 다 보고 싶을 때 사용
+      include: [{
+        model: Permission,
+        attributes: ["id", "title", "level"]
+      }, {
+        model: Board,
+        attributes: ["id", "title"]
+      }], // 컬럼을 필터나 조건을 주고 싶을 때 사용
+      where: {
+        id: req.params.id
+      }
     });
-  } else {
-    msg = "해당 아이디를 가진 유저가 없습니다.";
-    res.status(400).send({
-      msg,
-      findUser
-    });
+    res.status(200).send({ findUser })
+  } catch (error) {
+    console.log(error)
+    res.status(500).send({ error })
   }
-
 });
 
 //유저 생성
